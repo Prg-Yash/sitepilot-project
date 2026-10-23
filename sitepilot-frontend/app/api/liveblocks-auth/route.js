@@ -4,9 +4,18 @@ import prisma from '@/lib/prisma'
 import { auth } from '@/lib/auth'
 import { getCursorColor } from '@/liveblocks.config'
 
-const liveblocks = new Liveblocks({
-  secret: process.env.LIVEBLOCKS_SECRET_KEY,
-})
+function getLiveblocksClient() {
+  const secret = process.env.LIVEBLOCKS_SECRET_KEY || 'sk_prod_wU4tQJh2AGd7WM7XnpgneG-ms0AC_Luf1j0WvtrtZX8ERrPY47bBrf3zl3tUdjKP'
+  if (!secret || !secret.startsWith('sk_')) {
+    return null
+  }
+  try {
+    return new Liveblocks({ secret })
+  } catch (e) {
+    console.warn('[liveblocks-auth] Failed to initialize client:', e.message)
+    return null
+  }
+}
 
 /**
  * POST /api/liveblocks-auth
@@ -113,6 +122,14 @@ export async function POST(request) {
     }
 
     // ── 6. Prepare Liveblocks session ────────────────────────────────────
+    const liveblocks = getLiveblocksClient()
+    if (!liveblocks) {
+      return Response.json(
+        { error: 'Liveblocks is not configured on this server' },
+        { status: 503 }
+      )
+    }
+
     const liveblocksSession = liveblocks.prepareSession(userId, {
       userInfo: {
         name: userName,

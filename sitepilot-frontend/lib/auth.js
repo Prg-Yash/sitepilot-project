@@ -7,6 +7,8 @@ import { twoFactor, openAPI } from "better-auth/plugins"
 import { passkey } from "@better-auth/passkey"
 
 export const auth = betterAuth({
+  secret: process.env.BETTER_AUTH_SECRET || "1LG7Ao3N7VQ3wwIA0PWg57J0qeC6bMDB",
+  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000"),
   user: {
     changeEmail: {
       enabled: true,
