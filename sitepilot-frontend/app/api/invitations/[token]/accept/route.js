@@ -58,11 +58,12 @@ export async function GET(request, { params }) {
       return NextResponse.redirect(new URL('/dashboard?error=email-mismatch', appUrl))
     }
 
-    // Check email verification
+    // Auto-verify user email upon accepting a valid invitation sent to their email
     if (!session.user.emailVerified) {
-      return NextResponse.redirect(
-        new URL(`/verify-email?redirect=/api/invitations/${token}/accept`, appUrl)
-      )
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { emailVerified: true }
+      })
     }
 
     // Check if already a member
@@ -81,7 +82,7 @@ export async function GET(request, { params }) {
         where: { id: invitation.id },
         data: { status: 'ACCEPTED' }
       })
-      return NextResponse.redirect(new URL('/dashboard', appUrl))
+      return NextResponse.redirect(new URL(`/${invitation.tenantId}/sites`, appUrl))
     }
 
     // Add user to tenant and update invitation status
@@ -96,10 +97,14 @@ export async function GET(request, { params }) {
       prisma.invitation.update({
         where: { id: invitation.id },
         data: { status: 'ACCEPTED' }
+      }),
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: { emailVerified: true }
       })
     ])
 
-    return NextResponse.redirect(new URL('/dashboard', appUrl))
+    return NextResponse.redirect(new URL(`/${invitation.tenantId}/sites`, appUrl))
   } catch (error) {
     console.error('Error accepting invitation:', error)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'

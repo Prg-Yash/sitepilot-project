@@ -26,22 +26,44 @@ export const auth = betterAuth({
   },
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
     sendResetPassword: async ({ user, url }) => {
-      await sendResetPasswordEmail({
-        to: user.email,
-        resetPasswordUrl: url
-      })
+      try {
+        await sendResetPasswordEmail({
+          to: user.email,
+          resetPasswordUrl: url
+        })
+      } catch (err) {
+        console.warn('Error sending reset password email:', err?.message || err)
+      }
     }
   },
   emailVerification: {
     autoSignInAfterVerification: true,
-    sendOnSignUp: true,
+    sendOnSignUp: false,
     sendVerificationEmail: async ({ user, url }) => {
-      await sendVerificationEmail({
-        to: user.email,
-        verificationUrl: url
-      })
+      try {
+        await sendVerificationEmail({
+          to: user.email,
+          verificationUrl: url
+        })
+      } catch (err) {
+        console.warn('Error sending verification email:', err?.message || err)
+      }
+    }
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => {
+          return {
+            data: {
+              ...user,
+              emailVerified: true
+            }
+          }
+        }
+      }
     }
   },
   session: {

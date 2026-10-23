@@ -270,10 +270,14 @@ export default function FormsListPage() {
               <div key={form.id} className="group bg-white border border-gray-100 rounded-[2rem] overflow-hidden hover:border-[#8bc4b1] hover:-translate-y-1 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] transition-all duration-300 flex flex-col h-auto min-h-[280px]">
 
                 {/* Info Area */}
-                <div className="p-6 lg:p-8 flex-1 flex flex-col relative bg-white">
+                <div 
+                  onClick={() => router.push(`/${params.tenantId}/sites/${params.siteId}/forms/${form.id}`)}
+                  className="p-6 lg:p-8 flex-1 flex flex-col relative bg-white cursor-pointer group-hover:bg-gray-50/40 transition-colors"
+                  title="Click to view form overview"
+                >
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="min-w-0 flex-1">
-                      <h3 className="text-[1.2rem] font-black text-[#1d2321] tracking-tight uppercase truncate transition-colors mb-2">
+                      <h3 className="text-[1.2rem] font-black text-[#1d2321] tracking-tight uppercase truncate group-hover:text-[#8bc4b1] transition-colors mb-2">
                         {form.name}
                       </h3>
                       {form.description && (
@@ -299,17 +303,25 @@ export default function FormsListPage() {
                 {/* Actions Footer */}
                 <div className="px-6 py-4 bg-[#fcfdfc] border-t border-gray-100 flex items-center justify-between gap-2 z-20">
                   <button
-                    onClick={() => router.push(`/${params.tenantId}/sites/${params.siteId}/forms/${form.id}${canEdit ? '/builder' : ''}`)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 h-10 px-4 bg-[#f2f4f2] text-[#0b1411] text-xs font-black uppercase tracking-widest rounded-full hover:bg-[#0b1411] hover:text-[#d3ff4a] transition-all focus:outline-none focus:ring-2 focus:ring-[#0b1411]/20 group"
+                    onClick={() => router.push(`/${params.tenantId}/sites/${params.siteId}/forms/${form.id}`)}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 h-10 px-3 bg-[#f2f4f2] text-[#0b1411] text-xs font-black uppercase tracking-widest rounded-full hover:bg-gray-200 transition-all focus:outline-none"
                   >
-                    <Edit size={12} className="text-[#0b1411] group-hover:text-[#d3ff4a]" />
-                    {canEdit ? 'Builder' : 'View'}
+                    Overview
                   </button>
+                  {canEdit && (
+                    <button
+                      onClick={() => router.push(`/${params.tenantId}/sites/${params.siteId}/forms/${form.id}/builder`)}
+                      className="inline-flex items-center justify-center gap-1.5 h-10 px-4 bg-[#0b1411] text-[#d3ff4a] text-xs font-black uppercase tracking-widest rounded-full hover:bg-black transition-all focus:outline-none"
+                    >
+                      <Edit size={12} />
+                      Builder
+                    </button>
+                  )}
 
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={() => router.push(`/${params.tenantId}/sites/${params.siteId}/forms/${form.id}/submissions`)}
-                      className="px-4 h-10 flex items-center justify-center text-[10px] gap-1.5 font-black uppercase tracking-widest text-[#0b1411] bg-[#d3ff4a] hover:bg-[#c0eb3f] transition-all rounded-full shadow-sm hover:scale-105"
+                      className="px-3.5 h-10 flex items-center justify-center text-[10px] gap-1.5 font-black uppercase tracking-widest text-[#0b1411] bg-[#d3ff4a] hover:bg-[#c0eb3f] transition-all rounded-full shadow-sm hover:scale-105"
                       title="View Submissions"
                     >
                       <List size={12} />

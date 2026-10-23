@@ -31,7 +31,11 @@ function SignInContent() {
     setLoading(true)
 
     try {
-      await signIn.email(formData)
+      const res = await signIn.email(formData)
+      if (res?.error) {
+        setError(res.error.message || 'Invalid email or password.')
+        return
+      }
       router.push(redirectUrl || '/dashboard')
     } catch (err) {
       console.error('Sign in error:', err)

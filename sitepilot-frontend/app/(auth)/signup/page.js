@@ -34,14 +34,15 @@ function SignUpContent() {
 
     try {
       const result = await signUp.email(formData)
+      if (result?.error) {
+        setError(result.error.message || 'Sign up failed. Please try again.')
+        return
+      }
 
       // If there's a redirect URL (invitation), proceed with auto-signin
       if (redirectUrl) {
-        // Redirect to the invitation page after signup
         router.push(redirectUrl)
       } else {
-        // Regular signup flow
-        alert('Account created! Check your email to verify your address.')
         router.push('/dashboard')
       }
     } catch (err) {

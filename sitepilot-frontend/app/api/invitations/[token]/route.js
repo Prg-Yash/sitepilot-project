@@ -107,12 +107,12 @@ export async function POST(request, { params }) {
       )
     }
 
-    // Check if user email is verified (only add members who are verified)
+    // Auto-verify email if not verified yet (receiving the invite validates the address)
     if (!session.user.emailVerified) {
-      return NextResponse.json(
-        { error: 'Please verify your email before accepting invitations' },
-        { status: 400 }
-      )
+      await prisma.user.update({
+        where: { id: session.user.id },
+        data: { emailVerified: true }
+      })
     }
 
     // Check if user is already a member
@@ -138,20 +138,24 @@ export async function POST(request, { params }) {
       })
     }
 
-    // Add user to tenant
-    await prisma.tenantUser.create({
-      data: {
-        userId: session.user.id,
-        tenantId: invitation.tenantId,
-        role: invitation.role
-      }
-    })
-
-    // Update invitation status
-    await prisma.invitation.update({
-      where: { id: invitation.id },
-      data: { status: 'ACCEPTED' }
-    })
+    // Add user to tenant and update invitation status
+    await prisma.$transaction([
+      prisma.tenantUser.create({
+        data: {
+          userId: session.user.id,
+          tenantId: invitation.tenantId,
+          role: invitation.role
+        }
+      }),
+      prisma.invitation.update({
+        where: { id: invitation.id },
+        data: { status: 'ACCEPTED' }
+      }),
+      prisma.user.update({
+        where: { id: session.user.id },
+        data: { emailVerified: true }
+      })
+    ])
 
     return NextResponse.json({ 
       message: 'Invitation accepted successfully',

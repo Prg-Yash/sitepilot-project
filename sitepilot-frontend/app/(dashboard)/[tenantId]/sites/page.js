@@ -15,6 +15,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowLeft,
+  Settings,
 } from "lucide-react";
 import { hasPermission } from "@/lib/permissions";
 
@@ -247,24 +248,25 @@ function SiteCard({ site, tenantId, onDelete, router, userRole }) {
       </div>
 
       {/* Actions Footer */}
-      <div className="px-6 lg:px-8 pb-6 pt-4 border-t border-gray-100/50 flex items-center justify-between gap-3 relative z-10">
-        {canEdit ? (
-          <button
-            onClick={openBuilder}
-            className="flex-1 h-11 inline-flex items-center justify-center gap-2 px-6 bg-[#f2f4f2] text-[#0b1411] text-xs font-black uppercase tracking-widest rounded-full group-hover:bg-[#d3ff4a] shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
-          >
-            <Pencil size={15} className="text-[#0b1411]/50 group-hover:text-[#0b1411]/70" />
-            Build
-          </button>
-        ) : (
+      <div className="px-6 lg:px-8 pb-6 pt-4 border-t border-gray-100/50 flex items-center justify-between gap-2.5 relative z-10">
+        <div className="flex-1 flex items-center gap-2">
+          {canEdit && (
+            <button
+              onClick={openBuilder}
+              className="flex-1 h-11 inline-flex items-center justify-center gap-1.5 px-4 bg-[#f2f4f2] text-[#0b1411] text-xs font-black uppercase tracking-widest rounded-full group-hover:bg-[#d3ff4a] shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
+            >
+              <Pencil size={14} className="text-[#0b1411]/60" />
+              Build
+            </button>
+          )}
           <button
             onClick={() => router.push(`/${tenantId}/sites/${site.id}`)}
-            className="flex-1 h-11 flex items-center justify-center gap-1.5 px-6 bg-[#fcfdfc] border border-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-full hover:bg-gray-50 hover:scale-[1.02] active:scale-95 transition-all"
+            className="flex-1 h-11 inline-flex items-center justify-center gap-1.5 px-4 bg-[#fcfdfc] border border-gray-200 text-gray-700 text-xs font-black uppercase tracking-widest rounded-full hover:bg-gray-100 hover:text-[#0b1411] hover:border-gray-300 hover:scale-[1.02] active:scale-95 transition-all focus:outline-none"
           >
-            <Eye size={14} />
-            View
+            <Settings size={14} className="text-gray-500" />
+            Manage
           </button>
-        )}
+        </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {site.domain && (
