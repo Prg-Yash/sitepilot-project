@@ -17,9 +17,16 @@ export async function OPTIONS() {
 
 export async function POST(request) {
     try {
-        const body = await request.json();
-        const { siteId, pageSlug, userAgent, referrer } = body;
-        let { sessionId } = body;
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            const raw = await request.text();
+            body = raw ? JSON.parse(raw) : {};
+        }
+
+        const { siteId, pageSlug, userAgent, referrer } = body || {};
+        let { sessionId } = body || {};
 
         if (!siteId || !pageSlug) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400, headers: CORS_HEADERS });
@@ -39,11 +46,11 @@ export async function POST(request) {
         const ip = forwarded ? forwarded.split(",")[0].trim() : "unknown";
         const ipHash = crypto.createHash('sha256').update(ip + IP_SALT).digest('hex');
 
-        // Resolve or create session
+        // Resolve or create session (scoped to this specific site)
         let visitorSession = null;
         if (sessionId) {
-            visitorSession = await prisma.visitorSession.findUnique({
-                where: { id: sessionId },
+            visitorSession = await prisma.visitorSession.findFirst({
+                where: { id: sessionId, siteId },
             });
         }
 
@@ -59,7 +66,7 @@ export async function POST(request) {
         } else {
             // Touch updatedAt to keep the session alive
             await prisma.visitorSession.update({
-                where: { id: sessionId },
+                where: { id: visitorSession.id },
                 data: { updatedAt: new Date() },
             });
         }
@@ -74,11 +81,10 @@ export async function POST(request) {
             },
         });
 
-        const response = NextResponse.json(
+        return NextResponse.json(
             { success: true, pageViewId: pageView.id, sessionId },
             { headers: CORS_HEADERS }
         );
-        return response;
     } catch (error) {
         console.error("Analytics enter error:", error);
         return NextResponse.json({ error: "Internal Error" }, { status: 500, headers: CORS_HEADERS });

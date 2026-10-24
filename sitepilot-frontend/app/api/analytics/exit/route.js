@@ -13,8 +13,15 @@ export async function OPTIONS() {
 
 export async function POST(request) {
     try {
-        const body = await request.json();
-        const { pageViewId } = body;
+        let body;
+        try {
+            body = await request.json();
+        } catch {
+            const raw = await request.text();
+            body = raw ? JSON.parse(raw) : {};
+        }
+
+        const { pageViewId } = body || {};
 
         if (!pageViewId) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400, headers: CORS_HEADERS });

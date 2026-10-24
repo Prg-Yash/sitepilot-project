@@ -11,6 +11,7 @@ const IconGoogle = (props) => (
   </svg>
 );
 
+import Link from 'next/link'
 import { Suspense } from 'react'
 
 function SignInContent() {
@@ -154,9 +155,9 @@ function SignInContent() {
                 />
                 <span className="ml-2 text-sm text-gray-400 font-medium">Keep me signed in</span>
               </label>
-              <a href="#" className="text-sm text-[#d3ff4a] hover:text-[#c0eb3f] font-bold transition-colors">
-                Reset password
-              </a>
+              <Link href="/forgot-password" className="text-sm text-[#d3ff4a] hover:text-[#c0eb3f] font-bold transition-colors">
+                Forgot password?
+              </Link>
             </div>
 
             {/* Sign In Button */}
@@ -262,8 +263,8 @@ function SignInContent() {
 export default function SignInPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0b1411] via-[#0f211d] to-[#0c1a16]">
-        <div className="animate-spin rounded-full h-10 w-10 border-[4px] border-white/10 border-t-white" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0b1411]">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#d3ff4a]" />
       </div>
     }>
       <SignInContent />

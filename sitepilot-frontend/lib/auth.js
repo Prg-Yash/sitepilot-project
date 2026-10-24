@@ -30,6 +30,7 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: process.env.REQUIRE_EMAIL_VERIFICATION === 'true',
     sendResetPassword: async ({ user, url }) => {
+      console.log(`[Better Auth] Password reset requested for ${user.email}: ${url}`)
       try {
         await sendResetPasswordEmail({
           to: user.email,

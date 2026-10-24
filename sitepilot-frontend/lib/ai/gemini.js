@@ -206,23 +206,22 @@ export async function generateComponentContent({ componentType, context, busines
  * Build detailed prompt for layout generation
  */
 function buildLayoutPrompt(description, businessType, pageType) {
-  return `You are a world-class, award-winning web designer (inspired by v0.dev, Linear, Stripe, and Apple).
-Your goal is to create a breathtaking, premium, highly engaging ${pageType} website for a ${businessType} business.
+  return `You are a professional web designer creating a ${pageType} page for a ${businessType} business.
 
 DESCRIPTION: ${description}
 
-DESIGN PRINCIPLES:
-1. AESTHETICS: Modern dark mode (#0b1411, #080d0b) or clean minimalist aesthetic with vivid electric lime (#d3ff4a) / emerald accents and subtle borders.
-2. HIGH VALUE & CONVERSION: Include compelling copy, specific features, realistic pricing tiers, and real product cards.
-3. AVAILABLE COMPONENTS (Use these strategically):
-   - Navbar: Floating pill header with logo and links
-   - Hero: High-impact hero with badgeText ("✨ AI-Powered Platform"), title, subtitle, dual CTAs ("Get Started", "Watch Demo"), theme: "dark", showSocialProof: true
-   - Features: Bento Grid with 6 rich capability cards
-   - ProductGrid: (Recommended if business sells products, subscriptions, or services) includes realistic product titles, prices in ₹, category, and images
-   - Pricing: (Recommended for SaaS, agencies, services, or plans) 3 tiered plans with monthly/annual prices and features list
-   - CTA: Final closing conversion block with catchy headline and action button
-   - WhatsAppWidget: Floating live chat customer support widget
-   - Gallery, Image, Heading, Text, Button
+CRITICAL: Use ONLY these 9 component types. DO NOT create any other components:
+1. Hero
+2. Features
+3. CTA
+4. Text
+5. Heading
+6. Image
+7. Button
+8. Gallery
+9. Navbar
+
+DO NOT USE: Footer, Video, Map, or any other components not listed above.
 
 CRITICAL JSON STRUCTURE - Follow EXACTLY:
 
@@ -639,10 +638,7 @@ Return JSON:
 function sanitizeLayout(layout) {
   if (!layout || !layout.containers) return layout;
 
-  const validComponents = [
-    'Hero', 'Features', 'CTA', 'Text', 'Heading', 'Image', 'Button', 'Gallery', 'Navbar',
-    'ProductGrid', 'Pricing', 'WhatsAppWidget'
-  ];
+  const validComponents = ['Hero', 'Features', 'CTA', 'Text', 'Heading', 'Image', 'Button', 'Gallery', 'Navbar'];
 
   layout.containers.forEach(container => {
     container.columns?.forEach(column => {
@@ -767,178 +763,202 @@ function validateLayout(layout) {
  * Fallback layouts for common business types
  */
 function getFallbackLayout(businessType, pageType) {
-  const isDark = true;
-  return [
-    {
-      id: "container-nav",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 0 },
-      styles: { backgroundColor: "#0b1411", paddingTop: 16, paddingBottom: 16 },
-      columns: [
-        {
-          id: "col-nav",
+  const fallbacks = {
+    restaurant: [
+      {
+        id: 'container-1',
+        type: 'container',
+        settings: { direction: 'horizontal', contentWidth: 'boxed', maxWidth: 1280, gap: 16 },
+        styles: { backgroundColor: '#ffffff', paddingTop: 60, paddingBottom: 60 },
+        columns: [{
+          id: 'col-1',
           width: 12,
-          components: [
-            {
-              id: "navbar-fallback",
-              type: "Navbar",
-              props: {
-                logo: businessType ? `${businessType.toUpperCase()} STUDIO` : "SITEPILOT",
-                links: [
-                  { label: "Features", href: "#features" },
-                  { label: "Store", href: "#store" },
-                  { label: "Pricing", href: "#pricing" }
-                ],
-                ctaText: "Get Started",
-                theme: "dark"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "container-hero",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 16 },
-      styles: { backgroundColor: "#0b1411", paddingTop: 80, paddingBottom: 80 },
-      columns: [
-        {
-          id: "col-hero",
-          width: 12,
-          components: [
-            {
-              id: "hero-fallback",
-              type: "Hero",
-              props: {
-                badgeText: "✨ AI-Powered Experience 2026",
-                title: `Elevate Your ${businessType || "Digital"} Brand`,
-                subtitle: "Crafted for speed, aesthetic distinction, and conversion excellence. Instant e-commerce and real-time collaboration included.",
-                ctaText: "Start Free Trial",
-                secondaryCtaText: "Watch Demo",
-                theme: "dark",
-                showSocialProof: true
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "container-features",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 16 },
-      styles: { backgroundColor: "#080d0b", paddingTop: 96, paddingBottom: 96 },
-      columns: [
-        {
-          id: "col-features",
-          width: 12,
-          components: [
-            {
-              id: "features-fallback",
-              type: "Features",
-              props: {
-                badge: "POWERFUL ARCHITECTURE",
-                title: "Engineered for Exponential Growth",
-                subtitle: "Every component is built for peak aesthetic appeal and maximum conversion.",
-                theme: "dark",
-                items: [
-                  { title: "Sub-Second Latency", description: "Blazing fast global edge distribution via CloudFront." },
-                  { title: "Headless E-Commerce", description: "Native product showcase and Razorpay checkout." },
-                  { title: "Multiplayer Realtime", description: "Collaborative editing with live cursor presence." },
-                  { title: "Containerized Export", description: "One-click Next.js 15 source code and Dockerfile export." },
-                  { title: "AI Intelligence", description: "Continuous generation with Gemini 2.5 Flash." },
-                  { title: "Bank-Grade Encryption", description: "Isolated workspaces and SSL certification." }
-                ]
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "container-store",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 16 },
-      styles: { backgroundColor: "#0b1411", paddingTop: 96, paddingBottom: 96 },
-      columns: [
-        {
-          id: "col-store",
-          width: 12,
-          components: [
-            {
-              id: "products-fallback",
-              type: "ProductGrid",
-              props: {
-                badge: "EXCLUSIVE STORE",
-                title: "Featured Store Collection",
-                subtitle: "Browse our hand-crafted offerings with instant Razorpay checkout.",
-                currency: "₹",
-                theme: "dark"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "container-pricing",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 16 },
-      styles: { backgroundColor: "#080d0b", paddingTop: 96, paddingBottom: 96 },
-      columns: [
-        {
-          id: "col-pricing",
-          width: 12,
-          components: [
-            {
-              id: "pricing-fallback",
-              type: "Pricing",
-              props: {
-                badge: "MEMBERSHIP TIERS",
-                title: "Predictable, Scalable Pricing",
-                subtitle: "Cancel or adjust your membership at any time with zero lock-in.",
-                currency: "₹",
-                theme: "dark"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: "container-cta",
-      type: "container",
-      settings: { direction: "horizontal", contentWidth: "boxed", maxWidth: 1280, gap: 16 },
-      styles: { backgroundColor: "#0b1411", paddingTop: 80, paddingBottom: 80 },
-      columns: [
-        {
-          id: "col-cta",
-          width: 12,
-          components: [
-            {
-              id: "cta-fallback",
-              type: "CTA",
-              props: {
-                title: "Ready to Experience the Next Level?",
-                description: "Join thousands of businesses launching faster with SitePilot.",
-                buttonText: "Launch Your Website Today",
-                buttonLink: "#signup"
-              },
-              styles: { backgroundColor: "#14231e", textColor: "#ffffff" }
+          components: [{
+            id: 'hero-1',
+            type: 'Hero',
+            props: {
+              title: 'Welcome to Our Restaurant',
+              subtitle: 'Experience culinary excellence',
+              ctaText: 'View Menu',
+              ctaLink: '#menu'
             },
-            {
-              id: "wa-fallback",
-              type: "WhatsAppWidget",
-              props: {
-                phoneNumber: "919876543210",
-                message: "Hello! I am viewing your website.",
-                tooltip: "Chat with us on WhatsApp"
-              }
-            }
-          ]
+            styles: { backgroundColor: '#f3f4f6', paddingTop: 80, paddingBottom: 80 }
+          }]
+        }]
+      }
+    ],
+    gym: [
+      {
+        id: 'container-1',
+        type: 'container',
+        settings: { direction: 'horizontal', contentWidth: 'boxed', maxWidth: 1280, gap: 16 },
+        styles: { backgroundColor: '#ffffff', paddingTop: 60, paddingBottom: 60 },
+        columns: [{
+          id: 'col-1',
+          width: 12,
+          components: [{
+            id: 'hero-1',
+            type: 'Hero',
+            props: {
+              title: 'Transform Your Body',
+              subtitle: 'Join our fitness community today',
+              ctaText: 'Start Free Trial',
+              ctaLink: '#signup'
+            },
+            styles: { backgroundColor: '#1f2937', textColor: '#ffffff', paddingTop: 80, paddingBottom: 80 }
+          }]
+        }]
+      }
+    ]
+  };
+
+  return fallbacks[businessType.toLowerCase()] || fallbacks.restaurant;
+}
+
+/**
+ * Redesign an isolated section/container or component using AI
+ */
+export async function redesignElement({
+  selectedType,
+  selectedData,
+  prompt,
+  keepContent = false,
+  brandKit = null,
+  theme = null,
+  businessType = 'website',
+}) {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 4096,
+      responseMimeType: "application/json",
+    },
+  });
+
+  const isContainer = selectedType === 'container';
+
+  let brandContext = '';
+  if (brandKit?.colors) {
+    brandContext += `\nBRAND COLORS: Primary: ${brandKit.colors.primary || '#3b82f6'}, Secondary: ${brandKit.colors.secondary || '#8b5cf6'}.`;
+  }
+  if (theme?.colors) {
+    brandContext += `\nSITE THEME: Primary: ${theme.colors.primary || '#3b82f6'}, Background: ${theme.colors.background || '#ffffff'}.`;
+  }
+
+  const contentRule = keepContent
+    ? 'CRITICAL: PRESERVE ALL ORIGINAL TEXT CONTENT (headlines, subtitles, button texts, copy) from the current element. Redesign ONLY the visual styling, spacing, layout, column arrangement, colors, and aesthetics.'
+    : 'Rewrite engaging, high-converting copywriting and design sleek, modern aesthetics tailored to the user request.';
+
+  const systemPrompt = isContainer
+    ? `You are an elite web UI/UX designer redesigning a single SECTION/CONTAINER on a website.
+Redesign ONLY this container. Do not output anything outside this container.
+
+USER REDESIGN REQUEST:
+${prompt}
+${brandContext}
+
+${contentRule}
+
+CURRENT SECTION DATA:
+${JSON.stringify(selectedData, null, 2)}
+
+CRITICAL SCHEMA: Return ONLY a single container JSON object with this exact shape:
+{
+  "type": "container",
+  "settings": {
+    "direction": "horizontal",
+    "contentWidth": "boxed",
+    "maxWidth": 1280,
+    "gap": 24,
+    "verticalAlign": "center"
+  },
+  "styles": {
+    "backgroundColor": "#...",
+    "paddingTop": 80,
+    "paddingBottom": 80,
+    "paddingLeft": 20,
+    "paddingRight": 20
+  },
+  "columns": [
+    {
+      "width": 12,
+      "styles": {},
+      "components": [
+        {
+          "type": "Hero",
+          "props": {
+            "title": "...",
+            "subtitle": "...",
+            "ctaText": "...",
+            "ctaLink": "#"
+          },
+          "styles": {
+            "backgroundColor": "transparent",
+            "textColor": "#..."
+          }
         }
       ]
     }
-  ];
+  ]
 }
+
+RULES:
+1. Allowed component types: Hero, Features, CTA, Heading, Text, Button, Image, Gallery, Navbar, Stats, Testimonial, FAQ, PricingCard.
+2. In horizontal containers, column widths must sum to 12 (e.g. 12, or 6+6, or 4+4+4).
+3. Numeric values must be numbers (not strings).
+4. Return ONLY valid JSON, no markdown codeblocks.`
+    : `You are an elite web UI/UX designer redesigning a single COMPONENT of type "${selectedType}".
+Redesign ONLY this component's props and styles based on the user request.
+
+USER REDESIGN REQUEST:
+${prompt}
+${brandContext}
+
+${contentRule}
+
+CURRENT COMPONENT:
+${JSON.stringify(selectedData, null, 2)}
+
+CRITICAL SCHEMA: Return ONLY a single JSON object for this component with this exact shape:
+{
+  "type": "${selectedType}",
+  "props": { ... },
+  "styles": { ... }
+}
+
+RULES:
+1. Must retain "type": "${selectedType}".
+2. Redesign props and styles to look modern, attractive, and aligned with user request.
+3. Return ONLY valid JSON, no markdown codeblocks.`;
+
+  try {
+    const result = await model.generateContent(systemPrompt);
+    const response = await result.response;
+    let text = response.text().trim();
+
+    const codeMatch = text.match(/```(?:json)?\s*\n([\s\S]*?)\n```/);
+    if (codeMatch) text = codeMatch[1].trim();
+
+    let cleaned = cleanupJSON(text);
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      cleaned = aggressiveJSONCleanup(text);
+      parsed = JSON.parse(cleaned);
+    }
+
+    return {
+      success: true,
+      redesignedData: parsed,
+    };
+  } catch (err) {
+    console.error('[Gemini Redesign Error]:', err);
+    return {
+      success: false,
+      error: err.message || 'Failed to redesign with AI',
+    };
+  }
+}
+

@@ -514,6 +514,78 @@ const useBuilderStore = create((set, get) => ({
     saveToLocalStorage(get().layoutJSON);
   },
 
+  // Replace a full container in-place (used by AI Section Redesign)
+  replaceContainer: (containerId, newContainer) => {
+    set(
+      produce((state) => {
+        const page = state.layoutJSON?.pages?.find(
+          (p) => p.id === state.currentPageId,
+        );
+        if (!page) return;
+        const index = page.layout.findIndex((c) => c.id === containerId);
+        if (index === -1) return;
+
+        const containerWithIds = {
+          ...newContainer,
+          id: containerId,
+          type: "container",
+          settings: newContainer.settings || {},
+          styles: newContainer.styles || {},
+          columns: (newContainer.columns || []).map((col) => ({
+            ...col,
+            id: col.id || nanoid(),
+            width: col.width || 12,
+            styles: col.styles || {},
+            components: (col.components || []).map((comp) => ({
+              ...comp,
+              id: comp.id || nanoid(),
+              props: comp.props || {},
+              styles: comp.styles || {},
+            })),
+          })),
+        };
+
+        page.layout[index] = containerWithIds;
+      }),
+    );
+    saveToLocalStorage(get().layoutJSON);
+  },
+
+  // Replace a component in-place (used by AI Component Redesign)
+  replaceComponent: (componentId, newComponent) => {
+    set(
+      produce((state) => {
+        const page = state.layoutJSON?.pages?.find(
+          (p) => p.id === state.currentPageId,
+        );
+        if (!page) return;
+
+        for (const container of page.layout) {
+          for (const column of container.columns) {
+            const index = column.components.findIndex((c) => c.id === componentId);
+            if (index !== -1) {
+              column.components[index] = {
+                ...newComponent,
+                id: componentId,
+                type: newComponent.type || column.components[index].type,
+                props: {
+                  ...column.components[index].props,
+                  ...(newComponent.props || {}),
+                },
+                styles: {
+                  ...column.components[index].styles,
+                  ...(newComponent.styles || {}),
+                },
+              };
+              return;
+            }
+          }
+        }
+      }),
+    );
+    saveToLocalStorage(get().layoutJSON);
+  },
+
   // ============================================================================
   // HELPERS
   // ============================================================================

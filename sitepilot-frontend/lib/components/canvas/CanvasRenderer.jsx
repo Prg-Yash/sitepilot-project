@@ -11,7 +11,8 @@ import React, { useState, useRef } from "react";
 import { componentRegistry } from "../registry";
 import useBuilderStore from "@/lib/stores/builderStore";
 import { clsx } from "clsx";
-import { Box, GripVertical, Layers } from "lucide-react";
+import { Box, GripVertical, Layers, Sparkles } from "lucide-react";
+import AIRedesignModal from "../builder/AIRedesignModal";
 
 // ── Shared UI atoms ────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ function NodeLabel({ label, color = "blue", position = "top-left" }) {
   const posMap = {
     "top-left": "-top-3 left-2",
     "top-right": "-top-3 right-2",
+    "inline": "relative",
   };
   const bgMap = {
     blue: "bg-blue-600",
@@ -59,6 +61,7 @@ export default function CanvasRenderer({ page, onDrop, onDragOver, lockedByOther
   const { selectedNodeId, hoveredNodeId, setSelectedNode, setHoveredNode, reorderContainers } =
     useBuilderStore();
   const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [aiRedesignTarget, setAiRedesignTarget] = useState(null);
   const dragRef = useRef(null);
 
   if (!page || !page.layout) {
@@ -159,6 +162,7 @@ export default function CanvasRenderer({ page, onDrop, onDragOver, lockedByOther
                 onDragOver={onDragOver}
                 onContainerDragStart={handleContainerDragStart}
                 onContainerDragEnd={handleContainerDragEnd}
+                onOpenAIRedesign={setAiRedesignTarget}
               />
             </React.Fragment>
           ),
@@ -182,6 +186,13 @@ export default function CanvasRenderer({ page, onDrop, onDragOver, lockedByOther
           </span>
         )}
       </div>
+
+      {/* AI Redesign Modal */}
+      <AIRedesignModal
+        isOpen={Boolean(aiRedesignTarget)}
+        onClose={() => setAiRedesignTarget(null)}
+        selectedNode={aiRedesignTarget}
+      />
     </div>
   );
 }
@@ -204,6 +215,7 @@ function ContainerBlock({
   onDragOver,
   onContainerDragStart,
   onContainerDragEnd,
+  onOpenAIRedesign,
 }) {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -255,21 +267,6 @@ function ContainerBlock({
         paddingRight: `${styles.paddingRight ?? 0}px`,
         marginTop: `${styles.marginTop ?? 0}px`,
         marginBottom: `${styles.marginBottom ?? 0}px`,
-        marginLeft: styles.marginLeft ? `${styles.marginLeft}px` : undefined,
-        marginRight: styles.marginRight ? `${styles.marginRight}px` : undefined,
-        // Border
-        ...(styles.borderWidth && {
-          borderWidth: `${styles.borderWidth}px`,
-          borderStyle: styles.borderStyle || "solid",
-          borderColor: styles.borderColor || "#e5e7eb",
-        }),
-        borderRadius: styles.borderRadius ? `${styles.borderRadius}px` : undefined,
-        // Effects
-        boxShadow: styles.boxShadow || undefined,
-        opacity: (styles.opacity != null && styles.opacity !== 100) ? styles.opacity / 100 : undefined,
-        // Dimensions
-        minHeight: styles.minHeight ? `${styles.minHeight}px` : undefined,
-        overflow: styles.overflow || undefined,
       }}
     >
       {/* Drag Handle for Container (hidden when locked by another user) */}
@@ -300,9 +297,23 @@ function ContainerBlock({
       {/* Selection handles */}
       {isSelected && !isLockedByOther && <SelectionHandles />}
 
-      {/* Label */}
+      {/* Label & Quick Actions */}
       {isSelected && !isLockedByOther && (
-        <NodeLabel label="Container" color="violet" position="top-left" />
+        <div className="absolute -top-3.5 left-2 z-20 flex items-center gap-1.5 pointer-events-auto">
+          <NodeLabel label="Container" color="violet" position="inline" />
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onOpenAIRedesign) onOpenAIRedesign(container);
+            }}
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0b1411] text-[#d3ff4a] border border-[#d3ff4a]/40 shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            title="Redesign this container with AI"
+          >
+            <Sparkles size={11} className="animate-pulse" />
+            Redesign with AI
+          </button>
+        </div>
       )}
       {isHovered && !isSelected && !isLockedByOther && (
         <NodeLabel label="Container" color="violet" position="top-left" />
@@ -334,12 +345,15 @@ function ContainerBlock({
 
       {/* Inner wrapper — handles content width + flex direction */}
       <div
+        data-layout={isHorizontal ? "horizontal" : "vertical"}
+        className={clsx(
+          "flex",
+          isHorizontal ? "flex-row flex-wrap" : "flex-col"
+        )}
         style={{
           maxWidth: contentWidth === "boxed" ? `${maxWidth}px` : "none",
           margin: contentWidth === "boxed" ? "0 auto" : undefined,
           padding: contentWidth === "boxed" ? "0 16px" : undefined,
-          display: "flex",
-          flexDirection: isHorizontal ? "row" : "column",
           gap: `${gap}px`,
           alignItems: isHorizontal
             ? settings.verticalAlign || "stretch"
@@ -360,6 +374,7 @@ function ContainerBlock({
             onNodeSelect={onNodeSelect}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onOpenAIRedesign={onOpenAIRedesign}
           />
         ))}
       </div>
@@ -382,6 +397,7 @@ function Column({
   onNodeSelect,
   onDrop,
   onDragOver,
+  onOpenAIRedesign,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -407,13 +423,15 @@ function Column({
 
   return (
     <div
+      data-column="true"
       className={clsx(
         "relative transition-all duration-200",
         isDragOver && "ring-2 ring-blue-400 ring-offset-1 rounded-lg",
         isContainerSelected && "outline-1 outline-dashed outline-violet-200",
+        // Make columns full width on mobile, grid width on desktop
+        isHorizontal ? "w-full md:flex-1" : "w-full",
       )}
       style={{
-        width: isHorizontal ? `${(column.width / 12) * 100}%` : "100%",
         minHeight: "50px",
         backgroundColor: column.styles?.backgroundColor,
         paddingTop: column.styles?.paddingTop
@@ -428,6 +446,10 @@ function Column({
         paddingRight: column.styles?.paddingRight
           ? `${column.styles.paddingRight}px`
           : undefined,
+        // Apply flex-basis for desktop to maintain column widths
+        ...(isHorizontal && {
+          flexBasis: `${(column.width / 12) * 100}%`,
+        }),
       }}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
@@ -468,6 +490,7 @@ function Column({
                   isContainerLockedByOther={isContainerLockedByOther}
                   lockedByOthers={lockedByOthers}
                   onNodeSelect={onNodeSelect}
+                  onOpenAIRedesign={onOpenAIRedesign}
                 />
               ),
           )}
@@ -488,7 +511,7 @@ function Column({
 // COMPONENT RENDERER
 // ============================================================================
 
-function ComponentRenderer({ component, isContainerLockedByOther = false, lockedByOthers = {}, onNodeSelect }) {
+function ComponentRenderer({ component, isContainerLockedByOther = false, lockedByOthers = {}, onNodeSelect, onOpenAIRedesign }) {
   const { selectedNodeId, hoveredNodeId, setSelectedNode, setHoveredNode } =
     useBuilderStore();
   const [isDragging, setIsDragging] = useState(false);
@@ -528,47 +551,6 @@ function ComponentRenderer({ component, isContainerLockedByOther = false, locked
   // Determine which lock label to show (component-level takes priority)
   const activeLock = lockInfo || (isContainerLockedByOther ? null : null);
 
-  // Build wrapper styles from component.styles so spacing/border/shadow/dimensions actually render
-  const cs = component.styles || {};
-  const wrapperStyle = {};
-  // Spacing
-  if (cs.marginTop) wrapperStyle.marginTop = `${cs.marginTop}px`;
-  if (cs.marginBottom) wrapperStyle.marginBottom = `${cs.marginBottom}px`;
-  if (cs.marginLeft) wrapperStyle.marginLeft = `${cs.marginLeft}px`;
-  if (cs.marginRight) wrapperStyle.marginRight = `${cs.marginRight}px`;
-  if (cs.paddingTop) wrapperStyle.paddingTop = `${cs.paddingTop}px`;
-  if (cs.paddingBottom) wrapperStyle.paddingBottom = `${cs.paddingBottom}px`;
-  if (cs.paddingLeft) wrapperStyle.paddingLeft = `${cs.paddingLeft}px`;
-  if (cs.paddingRight) wrapperStyle.paddingRight = `${cs.paddingRight}px`;
-  // Dimensions
-  if (cs.width) wrapperStyle.width = `${cs.width}px`;
-  if (cs.height) wrapperStyle.height = `${cs.height}px`;
-  if (cs.minHeight) wrapperStyle.minHeight = `${cs.minHeight}px`;
-  if (cs.maxWidth) wrapperStyle.maxWidth = `${cs.maxWidth}px`;
-  if (cs.overflow) wrapperStyle.overflow = cs.overflow;
-  // Typography (cascade to children)
-  if (cs.fontSize) wrapperStyle.fontSize = `${cs.fontSize}px`;
-  if (cs.fontWeight) wrapperStyle.fontWeight = cs.fontWeight;
-  if (cs.lineHeight) wrapperStyle.lineHeight = cs.lineHeight;
-  if (cs.letterSpacing) wrapperStyle.letterSpacing = `${cs.letterSpacing}px`;
-  if (cs.textAlign) wrapperStyle.textAlign = cs.textAlign;
-  if (cs.textTransform) wrapperStyle.textTransform = cs.textTransform;
-  if (cs.textDecoration) wrapperStyle.textDecoration = cs.textDecoration;
-  if (cs.fontStyle) wrapperStyle.fontStyle = cs.fontStyle;
-  // Colors
-  if (cs.backgroundColor) wrapperStyle.backgroundColor = cs.backgroundColor;
-  if (cs.textColor) wrapperStyle.color = cs.textColor;
-  if (cs.opacity != null && cs.opacity !== 100) wrapperStyle.opacity = cs.opacity / 100;
-  // Border
-  if (cs.borderWidth) {
-    wrapperStyle.borderWidth = `${cs.borderWidth}px`;
-    wrapperStyle.borderStyle = cs.borderStyle || "solid";
-    if (cs.borderColor) wrapperStyle.borderColor = cs.borderColor;
-  }
-  if (cs.borderRadius) wrapperStyle.borderRadius = `${cs.borderRadius}px`;
-  // Effects
-  if (cs.boxShadow) wrapperStyle.boxShadow = cs.boxShadow;
-
   return (
     <div
       draggable={!isLockedByOther}
@@ -582,7 +564,6 @@ function ComponentRenderer({ component, isContainerLockedByOther = false, locked
           "ring-2 ring-blue-500 shadow-[0_0_0_1px_rgba(59,130,246,0.3)] rounded-sm",
         !isLockedByOther && isHovered && !isSelected && "ring-1 ring-blue-300 rounded-sm",
       )}
-      style={wrapperStyle}
       onMouseEnter={(e) => {
         e.stopPropagation();
         if (!isLockedByOther) setHoveredNode(component.id);
@@ -643,16 +624,29 @@ function ComponentRenderer({ component, isContainerLockedByOther = false, locked
       {/* Selection handles */}
       {isSelected && !isLockedByOther && <SelectionHandles />}
 
-      {/* Label */}
+      {/* Label & Quick Actions */}
       {isSelected && !isLockedByOther && (
-        <NodeLabel label={component.type} color="blue" position="top-right" />
+        <div className="absolute -top-3.5 right-2 z-20 flex items-center gap-1.5 pointer-events-auto">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onOpenAIRedesign) onOpenAIRedesign(component);
+            }}
+            className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-[#0b1411] text-[#d3ff4a] border border-[#d3ff4a]/40 shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer"
+            title={`Redesign ${component.type} with AI`}
+          >
+            <Sparkles size={11} className="animate-pulse" />
+            Redesign with AI
+          </button>
+          <NodeLabel label={component.type} color="blue" position="inline" />
+        </div>
       )}
       {isHovered && !isSelected && !isLockedByOther && (
         <NodeLabel label={component.type} color="blue" position="top-right" />
       )}
 
       <Component
-        id={component.id}
         props={component.props}
         styles={component.styles}
         isSelected={isSelected && !isLockedByOther}

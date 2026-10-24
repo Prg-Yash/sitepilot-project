@@ -27,6 +27,8 @@ const authPaths = [
     '/signin',
     '/signup',
     '/verify-email',
+    '/forgot-password',
+    '/reset-password',
 ]
 
 const authPathPrefixes = [

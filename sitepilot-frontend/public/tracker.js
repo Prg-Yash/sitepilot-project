@@ -11,17 +11,35 @@
         log("Tracker script loaded");
 
         // Resolve the script tag — document.currentScript works reliably for defer scripts
-        var scriptTag = document.currentScript || document.querySelector('script[data-site]');
+        var scriptTag = document.currentScript ||
+            document.querySelector('script[data-site]') ||
+            document.querySelector('script[src*="tracker.js"]');
+
         if (!scriptTag) {
             warn("Could not find tracker script tag — aborting");
             return;
         }
 
         var siteId = scriptTag.getAttribute('data-site');
-        var pageSlug = scriptTag.getAttribute('data-page') || window.location.pathname;
+        var pageSlug = scriptTag.getAttribute('data-page') || window.location.pathname || '/';
 
-        // Hardcoded API base URL
-        var apiBase = 'https://jeanene-unexposed-ingrid.ngrok-free.dev';
+        // ── Dynamic API Base Resolution ─────────────────────────────────────
+        // 1. Explicit data-api attribute on the script tag (preferred)
+        // 2. Origin of the script itself (if loaded from https://app.sitepilot.../tracker.js)
+        // 3. Current page origin (for local testing / preview)
+        var apiBase = scriptTag.getAttribute('data-api');
+        if (!apiBase && scriptTag.src) {
+            try {
+                var scriptUrl = new URL(scriptTag.src, window.location.href);
+                if (scriptUrl.origin && scriptUrl.origin !== 'null') {
+                    apiBase = scriptUrl.origin;
+                }
+            } catch (e) {}
+        }
+        if (!apiBase) {
+            apiBase = window.location.origin;
+        }
+        apiBase = apiBase.replace(/\/+$/, '');
 
         if (!siteId) {
             warn("Missing data-site attribute — aborting");
@@ -30,7 +48,7 @@
         log("Initialized", { siteId: siteId, pageSlug: pageSlug, apiBase: apiBase });
 
         var pageViewId = null;
-        var sessionId = getCookie('_sp_sid');
+        var sessionId = getStoredSession();
 
         if (sessionId) {
             log("Existing session found:", sessionId);
@@ -65,7 +83,7 @@
                     return;
                 }
                 if (data.sessionId) {
-                    setCookie('_sp_sid', data.sessionId, 30);
+                    setStoredSession(data.sessionId, 30);
                     sessionId = data.sessionId;
                     log("Session ID set:", sessionId);
                 }
@@ -121,7 +139,7 @@
         log("Event listeners attached (pagehide, visibilitychange)");
     }
 
-    // ── Cookie helpers ──────────────────────────────────────────────────────
+    // ── Cookie & Storage helpers ─────────────────────────────────────────────
     function setCookie(name, value, minutes) {
         var expires = '';
         if (minutes) {
@@ -129,7 +147,8 @@
             d.setTime(d.getTime() + minutes * 60000);
             expires = '; expires=' + d.toUTCString();
         }
-        document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax; Secure';
+        var isSecure = window.location.protocol === 'https:';
+        document.cookie = name + '=' + (value || '') + expires + '; path=/; SameSite=Lax' + (isSecure ? '; Secure' : '');
     }
 
     function getCookie(name) {
@@ -140,6 +159,24 @@
             if (c.indexOf(eq) === 0) return c.substring(eq.length);
         }
         return null;
+    }
+
+    function getStoredSession() {
+        var sid = getCookie('_sp_sid');
+        if (sid) return sid;
+        try {
+            return window.sessionStorage.getItem('_sp_sid') || window.localStorage.getItem('_sp_sid');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function setStoredSession(sid, minutes) {
+        setCookie('_sp_sid', sid, minutes);
+        try {
+            window.sessionStorage.setItem('_sp_sid', sid);
+            window.localStorage.setItem('_sp_sid', sid);
+        } catch (e) {}
     }
 
     // Prevent multiple executions
