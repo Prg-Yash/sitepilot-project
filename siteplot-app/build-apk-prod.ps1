@@ -29,7 +29,7 @@ Write-Host ""
 # Step 1: Update prod config with actual URL
 Write-Host "[1/4] Setting production URL..." -ForegroundColor Yellow
 $config = Get-Content "capacitor.config.prod.json" -Raw
-$config = $config -replace "https://YOUR_VERCEL_URL.vercel.app", $VercelUrl
+$config = $config -replace "https://sitepilot-pr.vercel.app", $VercelUrl
 $config | Set-Content "capacitor.config.json"
 
 # Step 2: Sync capacitor
